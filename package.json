@@ -1,0 +1,12 @@
+{
+  "name": "friendmod-relay",
+  "version": "1.0.0",
+  "description": "Tiny WebSocket relay so two friends' FriendMod clients can find each other over the internet",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
