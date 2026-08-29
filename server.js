@@ -152,6 +152,24 @@ wss.on('connection', (ws) => {
                 voicePeer: null,
             });
 
+            // Tell the joining client who is ALREADY here, before announcing them to
+            // everyone else.
+            //
+            // Without this, presence only ever flows forwards in time: you hear about people
+            // who connect after you, and never about people who were already on. Whoever
+            // starts the game second therefore sees every friend as offline, which also
+            // greys out anything gated on a friend being online - the Call button in
+            // particular. Costs one message per connected user, once, at connect.
+            for (const [otherKey, other] of clients) {
+                if (otherKey === key) continue;
+                send(ws, {
+                    type: 'presence',
+                    from: other.username,
+                    status: 'online',
+                    location: other.location || { type: 'menu', name: '' },
+                });
+            }
+
             broadcastPresence(username, 'online', data.location || { type: 'menu', name: '' });
 
             // Flush anything that arrived while this user was offline (chat, friend
@@ -230,7 +248,9 @@ wss.on('connection', (ws) => {
             if (target) {
                 send(target.ws, { type: data.type, from: username });
             } else if (data.type === 'voice_invite') {
-                send(ws, { type: 'voice_decline', from: data.to || '' });
+                // Distinct from voice_decline on purpose: "they are not online" and "they
+                // said no" are different things and the caller deserves to be told which.
+                send(ws, { type: 'voice_unavailable', from: data.to || '' });
             }
             return;
         }
